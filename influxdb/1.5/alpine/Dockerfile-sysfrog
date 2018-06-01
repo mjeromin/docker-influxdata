@@ -1,0 +1,30 @@
+FROM mjeromin/influxdb:1.5-alpine-base
+
+RUN set -x && \
+    apk update && \
+    apk add --no-cache \
+    shadow \
+    bash
+
+# Ensure users exist with desired uid/gid. If you bind mount a volume
+# from the host or a data container, ensure you use the same uid
+ARG user=influx
+ARG group=influx
+ARG uid=3011
+ARG gid=3011
+
+RUN set -x && \
+    groupadd -g ${gid} ${group} && \
+    useradd -d "/home/influx" -u ${uid} -g ${group} -s /bin/bash ${user}
+
+COPY entrypoint.sh /entrypoint.sh
+COPY init-influxdb.sh /init-influxdb.sh
+COPY influxdb.sysfrog.conf /etc/influxdb/influxdb.conf
+
+EXPOSE 8086
+
+VOLUME /var/lib/influxdb
+VOLUME /home/influx
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["influxd"]
